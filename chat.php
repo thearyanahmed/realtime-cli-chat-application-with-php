@@ -15,20 +15,42 @@ $pubnub = new Pubnub(
     false   
 );
 
-$connectAs = function() {
-
-	fwrite(STDOUT, 'Connect as : ');
-	
-	return trim(fgets(STDIN));
-};
 
 
 fwrite(STDOUT, 'Join room : ');
 
 $room = trim(fgets(STDIN));
 
-$username = $connectAs();
 
+$hereNow = $pubnub->hereNow($room,false,true);
+
+
+function connectAs() {
+
+	global $hereNow;
+
+	fwrite(STDOUT, 'Connect as : ');
+
+	$username = trim(fgets(STDIN));
+		
+	foreach ($hereNow['uuids'] as $user) {
+		
+		if($user['state']['username'] === $username){
+
+			fwrite(STDOUT, "Username taken\n");
+
+			$username = connectAs();
+		}
+	}
+	
+	return $username;
+};
+
+$username = connectAs();
+
+
+
+$pubnub->setState($room,['username' => $username]);
 
 fwrite(STDOUT, "Connected to '{$room}' as '{$username}' \n");
 
@@ -40,10 +62,10 @@ if($pid == -1) {
 
 } elseif($pid) {
 
+	fwrite(STDOUT, ' > ');
 
 	while(true) {
 		
-		fwrite(STDOUT, ' > ');
 
 		$message = trim(fgets(STDIN));
 
@@ -59,12 +81,20 @@ if($pid == -1) {
 
 } else {
 
-	$pubnub->subscribe($room,function($payload){
+	$pubnub->subscribe($room,function($payload) use ($username){
 		
 		$timestamps = date('d-m-y H:i:s');
 
-		fwrite(STDOUT, "[ " .$timestamps ." ] " . $payload['message']['username'] . " > " . $payload['message']['body'] . "\n");
+		if($username != $payload['message']['username']) {
+			
+			fwrite(STDOUT, "\r> ");
 
+		}
+
+		fwrite(STDOUT, "[ " .$timestamps ." ] " . $payload['message']['username'] . " > " . $payload['message']['body'] . "\n");
+		
+		fwrite(STDOUT, "\r> ");
+		
 		return true;
 	});	
 }
