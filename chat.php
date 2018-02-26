@@ -40,15 +40,30 @@ if($pid == -1) {
 
 } elseif($pid) {
 
+
+	while(true) {
+		
+		fwrite(STDOUT, ' > ');
+
+		$message = trim(fgets(STDIN));
+
+		$pubnub->publish($room,[
+
+			'body' => $message,
+			'username' => $username
+			
+			]);
+	}
+
 	pcntl_wait($status);
 
 } else {
 
-	$pubnub->subscribe('chat',function($payload){
-		var_dump($payload);
-		$timestamps = date('d H:i:s');
+	$pubnub->subscribe($room,function($payload){
+		
+		$timestamps = date('d-m-y H:i:s');
 
-		fwrite(STDOUT, "[{$timestamps}] username > this is the message");
+		fwrite(STDOUT, "[ " .$timestamps ." ] " . $payload['message']['username'] . " > " . $payload['message']['body'] . "\n");
 
 		return true;
 	});	
