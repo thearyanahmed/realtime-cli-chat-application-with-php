@@ -12,7 +12,7 @@ $pubnub = new Pubnub(
     "pub-c-a658d87b-d656-445e-94d3-5e5edeaa3bf9",  
     "sub-c-9b4155ec-1af5-11e8-acdc-3a42756f9040",  
     "sec-c-NTQ3MmFjZTQtYmVmNy00MGI4LWFkMGMtZjdlZWYwM2NkNTJk",   
-    false    ## SSL_ON?
+    false   
 );
 
 $connectAs = function() {
@@ -29,22 +29,27 @@ $room = trim(fgets(STDIN));
 
 $username = $connectAs();
 
-fwrite(STDOUT, "\n Connected to '{$room}' as '{$username}' \n");
+
+fwrite(STDOUT, "Connected to '{$room}' as '{$username}' \n");
 
 $pid = pcntl_fork();
 
-if ($pid == -1) {
+if($pid == -1) {
 
 	exit(1);
-} else if ($pid) {
 
+} elseif($pid) {
 
 	pcntl_wait($status);
+
 } else {
 
+	$pubnub->subscribe('chat',function($payload){
+		var_dump($payload);
+		$timestamps = date('d H:i:s');
 
-	$pubnub->subscribe($room , function($payload) {
-	    var_dump($payload);  
-	    return true;         
-	});
+		fwrite(STDOUT, "[{$timestamps}] username > this is the message");
+
+		return true;
+	});	
 }
